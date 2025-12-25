@@ -113,6 +113,7 @@ for image_key in "${!BUILDS[@]}"; do
             echo pass
         else
             echo failed
+            exit 1
             docker run --name build_investigator --rm -it -e IS_SANDBOX=1 -u root -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/workdir -e OLLAMA_HOST=10.12.2.4 -e OLLAMA_MODEL=huihui_ai/Qwen3.6-abliterated:35b --rm t2fn/claude-abliterated:debian --system-prompt "You are a program troubleshooter" -p "investigate the issue with install.sh as it seems to be blocking the build_rocky10.sh to pass the smoke test in build_all.sh.  You may need to look at the repos, such as tweakcc-fixed or lobotomized-claude-code to see what changes may have caused the issue.  Investigate, test, and fix install.sh to allow build_rocky10.sh to build a container and the claude instance to function properly.  Please try building the docker container and test that it can run a prompt properly or fix what needs to be done by modifying install.sh to make the claude code run properly on both redhat and debian varients."
             exit 1
         fi

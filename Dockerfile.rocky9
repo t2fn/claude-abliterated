@@ -57,10 +57,9 @@ RUN dnf update -y && \
     dnf install -y epel-release && \
     dnf config-manager --set-enabled crb && \
     dnf makecache --refresh && \
-    dnf install -y coreutils rsync gzip jq bc vim-common grep gawk sed gpg socat tar findutils zip binutils strace valgrind lsof gdb ltrace curl git zstd p7zip pciutils file wget gcc bzip2 xz unzip arm-none-eabi-gcc arm-none-eabi-gcc-cs-c++ arm-none-eabi-newlib squashfs-tools --allowerasing && \
+    dnf install -y --skip-broken coreutils rsync gzip jq bc vim-common grep gawk sed gpg socat tar findutils zip binutils strace valgrind lsof gdb ltrace curl git zstd p7zip pciutils file wget gcc musl-gcc bzip2 xz unzip arm-none-eabi-gcc arm-none-eabi-gcc-cs-c++ arm-none-eabi-newlib squashfs-tools bsdiff bspatch binwalk yara fmutils python3 python3-pip dialog which procps-ng --allowerasing && \
     curl -fsSL https://rpm.nodesource.com/setup_24.x | bash - && \
-    dnf install -y --disablerepo="*" --enablerepo="nodesource" nodejs 2>/dev/null || \
-    dnf install -y --skip-broken nodejs && \
+    dnf install -y --allowerasing nodejs && \
     npm install -g --force pnpm antigravity-awesome-skills && \
     npm update -g --force && \
     npm update -g npm && \
@@ -68,8 +67,10 @@ RUN dnf update -y && \
     curl -fsSL https://ollama.com/install.sh | sh || true && \
     dnf clean all && \
     # Final consolidated install — ensures ALL binaries persist in the filesystem
-    dnf install -y git nodejs || true && \
+    dnf install -y git nodejs python3-pip || true && \
     npm install -g --force pnpm && \
+    # Install Python linting/formatting tools via pip3
+    pip3 install pyupgrade black isort pythondialog && \
     useradd -ms /bin/bash claudeuser && \
     chown -R claudeuser: /home/claudeuser
 
@@ -78,9 +79,7 @@ RUN dnf update -y && \
 COPY start_claude.sh /usr/bin/
 
 USER claudeuser
-WORKDIR /home/claudeuser
-
-COPY install.sh /tmp/install.sh
+COPY install.sh config.json /tmp/
 RUN /bin/bash /tmp/install.sh
 
 WORKDIR /workdir

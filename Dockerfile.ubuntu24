@@ -54,7 +54,7 @@ ENV CLAUDE_VERSION=$CLAUDE_VERSION \
 # npm install --force avoids EEXIST conflicts; --force on npm update avoids
 # symlink errors.  antigravity-awesome-skills installed alongside pnpm.
 RUN apt-get update && \
-    { apt-get install -y --no-install-recommends curl rsync git zstd coreutils ca-certificates gzip jq bc vim-common grep gawk sed tar findutils zip binutils strace valgrind lsof gdb ltrace p7zip-full socat gpg docker-cli wget file musl-tools bzip2 xz-utils unzip gcc-arm-none-eabi squashfs-tools; } && \
+    { apt-get install -y --no-install-recommends curl rsync git zstd coreutils ca-certificates gzip jq bc vim-common grep gawk sed tar findutils zip binutils strace valgrind lsof gdb ltrace p7zip-full socat gpg docker-cli wget file musl-tools bzip2 xz-utils unzip gcc-arm-none-eabi squashfs-tools bsdiff bspatch binwalk yara fmutils dialog; } && \
     update-ca-certificates && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/nodesource.gpg && \
     echo "deb [trusted=yes] https://deb.nodesource.com/node_24.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
@@ -67,6 +67,8 @@ RUN apt-get update && \
     for pass in $(seq 1 10); do npm audit fix --audit-level=moderate 2>/dev/null || true; npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); const c=d.metadata.dependencies.vulnerabilities?.fixable || 0; process.stdout.write(c);" 2>/dev/null | grep -q "^0$" && break || true; done && \
     curl -fsSL https://ollama.com/install.sh | sh || true && \
     rm -rf /var/lib/apt/lists/* && \
+    # Install Python linting/formatting tools via pip3
+    pip3 install pyupgrade black isort pythondialog && \
     useradd -ms /bin/bash claudeuser && \
     chown -R claudeuser: /home/claudeuser
 
@@ -77,7 +79,7 @@ COPY start_claude.sh /usr/bin/
 USER claudeuser
 WORKDIR /home/claudeuser
 
-COPY install.sh /tmp/install.sh
+COPY install.sh config.json /tmp/
 RUN /bin/bash /tmp/install.sh
 
 WORKDIR /workdir

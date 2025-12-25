@@ -32,6 +32,8 @@ fi
 : "${CLAUDE_VERSION:=latest}"
 curl -fsSL https://claude.ai/install.sh | sed '/^ *rm/d' > /tmp/claude-install.sh
 bash /tmp/claude-install.sh "$CLAUDE_VERSION"
+# When using litellm and using the 128000 limit, a rounding error can sometime cause it to add a small bit
+#perl -i -pe 's/(q=|_S_=)128000(?=[;,}])/${1}127997/g' /home/claudeuser/.local/share/claude/versions/*
 
 # ---------------------------------------------------------------------------
 # 2. Apply tweakcc-fixed
@@ -43,16 +45,19 @@ bash /tmp/claude-install.sh "$CLAUDE_VERSION"
 #    .git is removed after checkout to minimize image size (shallow clone, no history).
 # ---------------------------------------------------------------------------
 : "${TWEAKCC_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/skrabe/tweakcc-fixed.git ~/dev/tweakcc-fixed
+git clone --depth 100 --single-branch https://github.com/skrabe/tweakcc-fixed.git ~/dev/tweakcc-fixed
+cd ~/dev/tweakcc-fixed
 # Fetch the specific SHA into the shallow clone's history (needed for older tag SHAs).
-git fetch origin "${TWEAKCC_SHA}" 2>/dev/null || true
-cd ~/dev/tweakcc-fixed && git checkout -q "$TWEAKCC_SHA"
-rm -rf ~/dev/tweakcc-fixed/.git
-cd ~/dev/tweakcc-fixed && pnpm install --include=optional && pnpm build
+git fetch origin "${TWEAKCC_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$TWEAKCC_SHA"
+# Run pnpm install; --include=optional installs esbuild but its postinstall may be ignored
+# We use --ignore-scripts=false to ensure postinstall runs and creates the binary
+pnpm install --dangerously-allow-all-builds && pnpm approve-builds --all && pnpm build
+mkdir -p /home/claudeuser/.tweakcc/
+cp /tmp/config.json /home/claudeuser/.tweakcc/config.json
 node ~/dev/tweakcc-fixed/dist/index.mjs --apply
-config_json=/home/claudeuser/.tweakcc/config.json
-jq '.settings.thinkingVerbs.verbs = ["Accelerating", "Ambling", "Ascending", "BoingBoinging", "BoltZizzling", "Bolting", "BounceBoinging", "BounceWagging", "Bouncing", "Bounding", "Brakeing", "BumpBumping", "Careening", "Catching", "CircleSwirling", "Circling", "Clambering", "ClatterClattering", "Climbing", "CoastGliding", "Coasting", "CrawlStumbling", "CreepScuttling", "Cruising", "Cycling", "DanceWagging", "DartFlicking", "Darting", "DashRushing", "Dashing", "Dawdling", "DazzleDazzling", "Descending", "Diping", "Diving", "DoodleWaggling", "Draging", "Drifting", "Driving", "Droping", "Falling", "Fleeing", "Flicking", "Flinging", "FlipFloppling", "Fliting", "Floating", "Flocking", "Flouncing", "FlySoaring", "Flying", "FrissonFizzling", "FrolicFrisking", "FrolicWagging", "Galloping", "GiggleWaggling", "Gliding", "Hauling", "HavockHopping", "HikeClimbing", "Hikeing", "Hobbling", "Hoisting", "HopJoggling", "HopSkiping", "HopWiggling", "Hoping", "Hovering", "Hurdling", "Hurrying", "Hurtling", "JiggleJigging", "JiggleJiggling", "Jiging", "JounceJiggling", "JumpBounding", "Jumping", "Launching", "LeapBoinging", "Leaping", "Levitating", "Limping", "Lobing", "Lunging", "Lurching", "Marching", "Meandering", "Navigating", "PaddleWading", "Paddling", "Parading", "PatterPattering", "Pedaling", "Pitching", "Pivoting", "Ploding", "Plummeting", "PlumpPlumping", "Plunging", "Pouncing", "PrancePrangling", "PranceWagging", "Prancing", "ProwlWandering", "Prowling", "Pulling", "Pushing", "Quivering", "ReefReefing", "RickRolling", "Rickrollinging", "Riding", "Rising", "Roaming", "RollRotatinging", "RollSpinning", "Rolling", "RunPattering", "Runing", "Rushing", "SailFloating", "Sailing", "Sashaying", "Sauntering", "Scaling", "ScamperStumbling", "Scampering", "Scooting", "Scrambling", "Scurrying", "ScuttleStumbling", "Scuttling", "ShimmyWagging", "Shimmying", "Shuffling", "Sidling", "Skating", "Skiding", "Skiming", "SkipDancing", "Skiping", "Skittering", "Slaloming", "SlideFlouncing", "SliderSliding", "Sliding", "Sliping", "Sneaking", "Soaring", "Somersaulting", "Spining", "Springing", "Sprinting", "Staggering", "Steering", "Strolling", "Struting", "Stumbling", "Swarming", "Swaying", "Swerving", "Swiming", "Swinging", "SwirlSwiveling", "Swiveling", "Swooping", "Throwing", "Toddling", "Tossing", "TossingTripping", "Traipsing", "Trampling", "Treading", "Treking", "Trembling", "Troting", "Trudging", "Tuging", "TumbleTripping", "Tumbling", "Twirling", "Twisting", "Twitching", "Vaulting", "Veering", "WaddleShuffling", "Waddling", "Wading", "Waggling", "WalkWaddling", "Walking", "Weaving", "Whirling", "WibbleWobbleing", "WiggleWagging", "WiggleWaggling", "WobbleWaggling", "WobbleWobbling", "Wobbling", "WribbleWibbling", "WriggleWaggling", "Wriggling", "ZigZagging", "ZigZagginging", "Zigzaging", "ZizzleZzling"]' "$config_json" > "$config_json.tmp" && mv "$config_json.tmp" "$config_json"
-
 
 # ---------------------------------------------------------------------------
 # 3. Clone lobotomized-claude-code
@@ -61,10 +66,13 @@ jq '.settings.thinkingVerbs.verbs = ["Accelerating", "Ambling", "Ascending", "Bo
 #    LOBOTOMIZED_SHA is set via --build-arg at build time; falls back to HEAD.
 # ---------------------------------------------------------------------------
 : "${LOBOTOMIZED_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/skrabe/lobotomized-claude-code.git ~/.tweakcc/lobotomized-claude-code
-git fetch origin "${LOBOTOMIZED_SHA}" 2>/dev/null || true
-cd ~/.tweakcc/lobotomized-claude-code && git checkout -q "$LOBOTOMIZED_SHA"
-rm -rf ~/.tweakcc/lobotomized-claude-code/.git
+git clone --depth 100 --single-branch https://github.com/skrabe/lobotomized-claude-code.git ~/.tweakcc/lobotomized-claude-code
+cd ~/.tweakcc/lobotomized-claude-code
+# Fetch the specific SHA into the shallow clone's history (needed for older tag SHAs).
+git fetch origin "${LOBOTOMIZED_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$LOBOTOMIZED_SHA"
 ln -sfn ~/.tweakcc/lobotomized-claude-code/system-prompts ~/.tweakcc/system-prompts
 ln -sfn ~/.tweakcc/lobotomized-claude-code/system-reminders ~/.tweakcc/system-reminders
 
@@ -75,10 +83,12 @@ ln -sfn ~/.tweakcc/lobotomized-claude-code/system-reminders ~/.tweakcc/system-re
 #    CLAUDE_TOOLS_SHA is set via --build-arg at build time; falls back to HEAD.
 # ---------------------------------------------------------------------------
 : "${CLAUDE_TOOLS_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/mijuny/claude-tools ~/.claude-tools
-git fetch origin "${CLAUDE_TOOLS_SHA}" 2>/dev/null || true
-cd ~/.claude-tools && git checkout -q "$CLAUDE_TOOLS_SHA"
-rm -rf ~/.claude-tools/.git
+git clone --depth 100 --single-branch https://github.com/mijuny/claude-tools ~/.claude-tools
+cd ~/.claude-tools
+git fetch origin "${CLAUDE_TOOLS_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$CLAUDE_TOOLS_SHA"
 mkdir -p ~/bin
 cp -f ~/.claude-tools/bin/* ~/bin/
 chmod +x ~/bin/*
@@ -90,10 +100,12 @@ chmod +x ~/bin/*
 #    AWESOME_TOOLKIT_SHA is set via --build-arg at build time; falls back to HEAD.
 # ---------------------------------------------------------------------------
 : "${AWESOME_TOOLKIT_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude-code-toolkit
-git fetch origin "${AWESOME_TOOLKIT_SHA}" 2>/dev/null || true
-cd ~/.claude-code-toolkit && git checkout -q "$AWESOME_TOOLKIT_SHA"
-rm -rf ~/.claude-code-toolkit/.git
+git clone --depth 100 --single-branch https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude-code-toolkit
+cd ~/.claude-code-toolkit
+git fetch origin "${AWESOME_TOOLKIT_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$AWESOME_TOOLKIT_SHA"
 cp -rf ~/.claude-code-toolkit/skills ~/.claude/skills
 cp -rf ~/.claude-code-toolkit/rules ~/.claude/rules
 cp -rf ~/.claude-code-toolkit/templates ~/.claude/templates
@@ -105,10 +117,12 @@ cp -rf ~/.claude-code-toolkit/templates ~/.claude/templates
 #    SUPERPOWERS_SHA is set via --build-arg at build time; falls back to HEAD.
 # ---------------------------------------------------------------------------
 : "${SUPERPOWERS_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/pcvelz/superpowers ~/.superpowers
-git fetch origin "${SUPERPOWERS_SHA}" 2>/dev/null || true
-cd ~/.superpowers && git checkout -q "$SUPERPOWERS_SHA"
-rm -rf ~/.superpowers/.git
+git clone --depth 100 --single-branch https://github.com/pcvelz/superpowers ~/.superpowers
+cd ~/.superpowers
+git fetch origin "${SUPERPOWERS_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$SUPERPOWERS_SHA"
 cp -f ~/.superpowers/scripts/*.sh ~/bin/
 chmod +x ~/bin/*.sh
 cp -rf ~/.superpowers/skills ~/.claude/skills
@@ -119,10 +133,12 @@ cp -rf ~/.superpowers/skills ~/.claude/skills
 #    SHANNON_SHA is set via --build-arg at build time; falls back to HEAD.
 # ---------------------------------------------------------------------------
 : "${SHANNON_SHA:=HEAD}"
-git clone --depth 1 --single-branch https://github.com/unicodeveloper/shannon ~/.shannon
-git fetch origin "${SHANNON_SHA}" 2>/dev/null || true
-cd ~/.shannon && git checkout -q "$SHANNON_SHA"
-rm -rf ~/.shannon/.git
+git clone --depth 100 --single-branch https://github.com/unicodeveloper/shannon ~/.shannon
+cd ~/.shannon
+git fetch origin "${SHANNON_SHA}" 2>/dev/null
+# Remove shallow boundary so git checkout can read the tree through the full chain.
+#git fetch origin --unshallow 2>/dev/null
+git checkout -q "$SHANNON_SHA"
 cp -f ~/.shannon/scripts/*.sh ~/bin/
 cp -f ~/.shannon/SKILL.md ~/.claude/skills/
 
@@ -148,28 +164,7 @@ npm install -g -S --force antigravity-awesome-skills --prefix /home/claudeuser/.
 # All packages already at latest major from -S installs above
 # Deduplicate AFTER all installs to avoid race conditions
 # Use --force to handle Docker overlay2 filesystem rename issues
-npm dedupe --force 2>/dev/null || true
-
-# --- Audit and fix ALL transitive dependency vulnerabilities ---
-# Loop until no more fixable vulnerabilities are found.
-# After fixing one dep (e.g. deep-extend), another (e.g. https-proxy-agent)
-# may become fixable — so we loop to catch cascading fixes.
-FIXED=$(npm audit fix --audit-level=moderate 2>/dev/null || true)
-pass=0
-max_pass=10
-while [ "$pass" -lt "$max_pass" ]; do
-    # Count how many packages are still flagged as fixable
-    prev=$(npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); return d.metadata.dependencies.vulnerabilities?.fixable || 0;" 2>/dev/null || echo "0")
-    # Re-run audit fix; if it didn't change the fixable count, we're done
-    npm audit fix --audit-level=moderate 2>/dev/null || true
-    curr=$(npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); return d.metadata.dependencies.vulnerabilities?.fixable || 0;" 2>/dev/null || echo "0")
-    if [ "$curr" -eq "$prev" ] 2>/dev/null; then
-        break
-    fi
-    pass=$((pass + 1))
-done
-# Final audit for logging (non-fatal)
-npm audit --audit-level=moderate 2>/dev/null || true
+npm dedupe --force 2>/dev/null
 
 # 9. Cleanup
 #    Removes the backup directory created during install and sets permissive

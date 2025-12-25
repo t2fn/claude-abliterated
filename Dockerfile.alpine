@@ -62,12 +62,15 @@ RUN apk add --no-cache \
         strace ltrace valgrind lsof gdb p7zip \
         socat gpg gnupg \
         docker-cli \
-        nodejs npm && \
+        dialog nodejs npm py3-pip && \
     npm install -g --force pnpm antigravity-awesome-skills && \
     npm update -g --force && \
     npm update -g npm && \
     for pass in $(seq 1 10); do npm audit fix --audit-level=moderate 2>/dev/null || true; npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); const c=d.metadata.dependencies.vulnerabilities?.fixable || 0; process.stdout.write(c);" 2>/dev/null | grep -q "^0$" && break || true; done && \
     curl -fsSL https://ollama.com/install.sh | sh || true && \
+    # Install Python linting/formatting tools via pip3
+    pip3 install --break-system-packages pyupgrade black isort pythondialog && \
+    apk add --no-cache yara && \
     adduser -s /bin/bash -D claudeuser && \
     chown -R claudeuser: /home/claudeuser
 
@@ -78,7 +81,7 @@ COPY start_claude.sh /usr/bin/
 USER claudeuser
 WORKDIR /home/claudeuser
 
-COPY install.sh /tmp/install.sh
+COPY install.sh config.json /tmp/
 RUN /bin/bash /tmp/install.sh
 
 WORKDIR /workdir
