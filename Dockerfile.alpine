@@ -1,0 +1,70 @@
+# Dockerfile.alpine — Claude Code container on Alpine Linux (latest stable)
+#
+# Base:      Alpine Linux latest (musl-based, ultra-lightweight)
+# Package:   apk
+# Node.js:   via NodeSource RPM/DEB → Alpine uses Node.js from NodeSource or nodejs package
+# User:      claudeuser (non-root, recommended for security)
+#
+# Build args (passed from build_all.sh / build_*.sh):
+#   CLAUDE_VERSION, TWEAKCC_SHA, LOBOTOMIZED_SHA, CLAUDE_TOOLS_SHA,
+#   AWESOME_TOOLKIT_SHA, SUPERPOWERS_SHA, SHANNON_SHA
+#
+# Two layers:
+#   1. Privileged run layer — all installs as root: apk, Node.js, npm, ollama
+#   2. Unprivileged run layer — runs as claudeuser: CLI, tools, skills
+
+FROM alpine:latest
+
+ARG CLAUDE_VERSION=latest \
+    TWEAKCC_SHA=HEAD \
+    LOBOTOMIZED_SHA=HEAD \
+    CLAUDE_TOOLS_SHA=HEAD \
+    AWESOME_TOOLKIT_SHA=HEAD \
+    SUPERPOWERS_SHA=HEAD \
+    SHANNON_SHA=HEAD
+
+ENV CLAUDE_VERSION=$CLAUDE_VERSION \
+    TWEAKCC_SHA=$TWEAKCC_SHA \
+    LOBOTOMIZED_SHA=$LOBOTOMIZED_SHA \
+    CLAUDE_TOOLS_SHA=$CLAUDE_TOOLS_SHA \
+    AWESOME_TOOLKIT_SHA=$AWESOME_TOOLKIT_SHA \
+    SUPERPOWERS_SHA=$SUPERPOWERS_SHA \
+    SHANNON_SHA=$SHANNON_SHA
+
+ENV PATH="/home/claudeuser/bin:/home/claudeuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Privileged run layer — root.  Everything is installed and updated in one pass:
+# apk add, Node.js, npm install+update, ollama, user creation.
+# --no-cache avoids keeping apk cache; --virtual cleans up build deps.
+RUN apk add --no-cache \
+        bash coreutils build-base musl-dev \
+        curl wget file musl-utils \
+        bzip2 xz unzip zip zlib \
+        p7zip zstd \
+        git openssh-client rsync \
+        jq bc grep gawk sed \
+        strace ltrace valgrind lsof gdb p7zip \
+        socat gpg gnupg \
+        docker-cli \
+        nodejs npm && \
+    npm install -g --force pnpm antigravity-awesome-skills && \
+    npm update -g --force && \
+    npm update -g npm && \
+    curl -fsSL https://ollama.com/install.sh | sh || true && \
+    adduser -s /bin/bash -D claudeuser
+
+# Unprivileged run layer — claudeuser.  Copies install.sh and runs it to install
+# the Claude CLI and all git-cloned tools.
+COPY start_claude.sh /usr/bin/
+
+USER claudeuser
+WORKDIR /home/claudeuser
+
+COPY install.sh /tmp/install.sh
+RUN /bin/bash /tmp/install.sh
+
+ENV BASH_DEFAULT_TIMEOUT_MS=3600000 BASH_MAX_TIMEOUT_MS=3600000 CLAUDE_CODE_FORK_SUBAGENT=1 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 OLLAMA_CONTEXT_LENGTH=262144 CLAUDE_CONFIG_DIR=/workdir/.claude DISABLE_AUTOUPDATE=1 DISABLE_TELEMETRY=1 DISABLE_ERROR_REPORTING=1 DISABLE_BUG_COMMAND=1 CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 DISABLE_NON_ESSENTIAL_MODEL_CALLS=1 CLAUDE_CODE_ENABLE_TELEMETRY=0 OTEL_METRICS_EXPORTER=custom OTEL_TRACES_EXPORTER=none OTEL_LOGS_EXPORTER=none
+
+WORKDIR /workdir
+
+ENTRYPOINT ["start_claude.sh"]
