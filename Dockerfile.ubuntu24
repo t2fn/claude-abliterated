@@ -29,9 +29,25 @@ ENV CLAUDE_VERSION=$CLAUDE_VERSION \
     CLAUDE_TOOLS_SHA=$CLAUDE_TOOLS_SHA \
     AWESOME_TOOLKIT_SHA=$AWESOME_TOOLKIT_SHA \
     SUPERPOWERS_SHA=$SUPERPOWERS_SHA \
-    SHANNON_SHA=$SHANNON_SHA
-
-ENV PATH="/home/claudeuser/bin:/home/claudeuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    SHANNON_SHA=$SHANNON_SHA \
+    HOME=/home/claudeuser \
+    PATH="/home/claudeuser/bin:/home/claudeuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    BASH_DEFAULT_TIMEOUT_MS=3600000 \
+    BASH_MAX_TIMEOUT_MS=3600000 \
+    CLAUDE_CODE_FORK_SUBAGENT=1 \
+    CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 \
+    OLLAMA_CONTEXT_LENGTH=262144 \
+    CLAUDE_CONFIG_DIR=/workdir/.claude \
+    DISABLE_AUTOUPDATE=1 \
+    DISABLE_TELEMETRY=1 \
+    DISABLE_ERROR_REPORTING=1 \
+    DISABLE_BUG_COMMAND=1 \
+    CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 \
+    DISABLE_NON_ESSENTIAL_MODEL_CALLS=1 \
+    CLAUDE_CODE_ENABLE_TELEMETRY=0 \
+    OTEL_METRICS_EXPORTER=custom \
+    OTEL_TRACES_EXPORTER=none \
+    OTEL_LOGS_EXPORTER=none
 
 # Privileged run layer — root.  Everything is installed and updated in one pass:
 # apt-get update, NodeSource nodejs, npm install+update, ollama, user creation.
@@ -50,7 +66,8 @@ RUN apt-get update && \
     npm update -g npm && \
     curl -fsSL https://ollama.com/install.sh | sh || true && \
     rm -rf /var/lib/apt/lists/* && \
-    useradd -ms /bin/bash claudeuser
+    useradd -ms /bin/bash claudeuser && \
+    chown -R claudeuser: /home/claudeuser
 
 # Unprivileged run layer — claudeuser.  Copies install.sh and runs it to install
 # the Claude CLI and all git-cloned tools.
@@ -61,8 +78,6 @@ WORKDIR /home/claudeuser
 
 COPY install.sh /tmp/install.sh
 RUN /bin/bash /tmp/install.sh
-
-ENV BASH_DEFAULT_TIMEOUT_MS=3600000 BASH_MAX_TIMEOUT_MS=3600000 CLAUDE_CODE_FORK_SUBAGENT=1 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 OLLAMA_CONTEXT_LENGTH=262144 CLAUDE_CONFIG_DIR=/workdir/.claude DISABLE_AUTOUPDATE=1 DISABLE_TELEMETRY=1 DISABLE_ERROR_REPORTING=1 DISABLE_BUG_COMMAND=1 CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 DISABLE_NON_ESSENTIAL_MODEL_CALLS=1 CLAUDE_CODE_ENABLE_TELEMETRY=0 OTEL_METRICS_EXPORTER=custom OTEL_TRACES_EXPORTER=none OTEL_LOGS_EXPORTER=none
 
 WORKDIR /workdir
 
