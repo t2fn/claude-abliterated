@@ -64,6 +64,7 @@ RUN dnf update -y && \
     npm install -g --force pnpm antigravity-awesome-skills && \
     npm update -g --force && \
     npm update -g npm && \
+    for pass in $(seq 1 10); do npm audit fix --audit-level=moderate 2>/dev/null || true; npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); const c=d.metadata.dependencies.vulnerabilities?.fixable || 0; process.stdout.write(c);" 2>/dev/null | grep -q "^0$" && break || true; done && \
     curl -fsSL https://ollama.com/install.sh | sh || true && \
     dnf clean all && \
     # Final consolidated install — ensures ALL binaries persist in the filesystem

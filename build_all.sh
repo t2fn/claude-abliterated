@@ -11,26 +11,33 @@ fi
 
 rsync --delete -av $HOME/git/claude/ gx10:git/claude/ --exclude=.claude || true
 
+# ── Fetch git SHAs at the top (before building anything) ──
+# Priority: source.shas (pinned) > environment/override > ls-remote HEAD (dynamic)
+# source.shas is reviewed and committed; build_all.sh sources it before
+# fetching any SHAs that are still empty.
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
-REPO="${T2FN_REPO:-t2fn}"
-BASE="${REPO}/claude-abliterated"
+SCRIPT_DIR="$(pwd)"
+BASE=t2fn/claude-abliterated
 
-# Last-built version stored by this script
-VERSION_FILE="$SCRIPT_DIR/.claude-latest-version"
+# Source pinned SHAs if the file exists
+if [ -z "${FORCE_LS:-}" ] && [ -f "${SCRIPT_DIR}/source.shas" ]; then
+    . "${SCRIPT_DIR}/source.shas"
+fi
 
-# ── Fetch git SHAs at the top (before building anything) ──
-# These SHAs are fetched once and passed to all Docker builds for reproducibility.
+# Fetch any SHAs that are still empty (dynamic fallback to ls-remote HEAD)
 fetch_git_sha() {
     git ls-remote "https://github.com/${1}/${2}.git" HEAD | awk '{print $1}'
 }
 
-TWEAKCC_SHA=$(fetch_git_sha skrabe tweakcc-fixed)
-LOBOTOMIZED_SHA=$(fetch_git_sha skrabe lobotomized-claude-code)
-CLAUDE_TOOLS_SHA=$(fetch_git_sha mijuny claude-tools)
-AWESOME_TOOLKIT_SHA=$(fetch_git_sha rohitg00 awesome-claude-code-toolkit)
-SUPERPOWERS_SHA=$(fetch_git_sha pcvelz superpowers)
-SHANNON_SHA=$(fetch_git_sha unicodeveloper shannon)
+# Only use ls-remote if SHA is still unset and not forcing dynamic
+: "${TWEAKCC_SHA:=$(fetch_git_sha skrabe tweakcc-fixed)}"
+: "${LOBOTOMIZED_SHA:=$(fetch_git_sha skrabe lobotomized-claude-code)}"
+: "${CLAUDE_TOOLS_SHA:=$(fetch_git_sha mijuny claude-tools)}"
+: "${AWESOME_TOOLKIT_SHA:=$(fetch_git_sha rohitg00 awesome-claude-code-toolkit)}"
+: "${SUPERPOWERS_SHA:=$(fetch_git_sha pcvelz superpowers)}"
+: "${SHANNON_SHA:=$(fetch_git_sha unicodeveloper shannon)}"
 
 export TWEAKCC_SHA LOBOTOMIZED_SHA CLAUDE_TOOLS_SHA AWESOME_TOOLKIT_SHA SUPERPOWERS_SHA SHANNON_SHA
 

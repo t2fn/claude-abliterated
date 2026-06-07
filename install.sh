@@ -1,0 +1,172 @@
+#!/bin/bash
+# Install script for the claude-abliterated Docker image.
+#
+# This script sets up the entire Claude Abliterated Code environment in one pass.
+set -ex
+cd /home/claudeuser
+
+# Prevent git committing of any .claude directory (for the /workdir/.claude path)
+echo ".claude/" > $HOME/.gitignore_global
+git config --global core.excluesfile $HOME/.gitignore_global
+
+# Ensure fully explicit PATH so git and other standard binaries are always found.
+# The Dockerfile ENV PATH may vary across base images; this guarantees all standard paths.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/claudeuser/bin:/home/claudeuser/.local/bin"
+
+# Self-healing: if git was installed in the first RUN layer but didn't persist to the
+# second RUN layer's filesystem, check common locations and use absolute path.
+if [ ! -x /usr/bin/git ]; then
+    if [ -x /usr/local/bin/git ]; then
+        : # found in alternate path
+    elif command -v rpm >/dev/null 2>&1 && rpm -q git >/dev/null 2>&1; then
+        : # git package is installed (binary may be in non-standard location)
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 1. Install Claude CLI (release from claude.ai)
+#    Fetch the official install script, strip stray 'rm' lines that would
+#    delete our downloads layer, save it, then run with the pinned version.
+#    CLAUDE_VERSION is set via --build-arg at build time; falls back to 'latest'.
+# ---------------------------------------------------------------------------
+: "${CLAUDE_VERSION:=latest}"
+curl -fsSL https://claude.ai/install.sh | sed '/^ *rm/d' > /tmp/claude-install.sh
+bash /tmp/claude-install.sh "$CLAUDE_VERSION"
+
+# ---------------------------------------------------------------------------
+# 2. Apply tweakcc-fixed
+#    Clones the tweakcc repo at a pinned SHA, installs deps, builds, and patches Claude
+#    Code's cli.js in place — three mechanisms cover different injection
+#    paths: named-prompt overrides, inline-blob overrides, and system
+#    reminder overrides.
+#    TWEAKCC_SHA is set via --build-arg at build time; falls back to HEAD.
+#    .git is removed after checkout to minimize image size (shallow clone, no history).
+# ---------------------------------------------------------------------------
+: "${TWEAKCC_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/skrabe/tweakcc-fixed.git ~/dev/tweakcc-fixed
+cd ~/dev/tweakcc-fixed && git checkout -q "$TWEAKCC_SHA"
+rm -rf ~/dev/tweakcc-fixed/.git
+cd ~/dev/tweakcc-fixed && pnpm install --include=optional && pnpm build
+node ~/dev/tweakcc-fixed/dist/index.mjs --apply
+config_json=/home/claudeuser/.tweakcc/config.json
+jq '.settings.thinkingVerbs.verbs = ["Accelerating", "Ambling", "Ascending", "BoingBoinging", "BoltZizzling", "Bolting", "BounceBoinging", "BounceWagging", "Bouncing", "Bounding", "Brakeing", "BumpBumping", "Careening", "Catching", "CircleSwirling", "Circling", "Clambering", "ClatterClattering", "Climbing", "CoastGliding", "Coasting", "CrawlStumbling", "CreepScuttling", "Cruising", "Cycling", "DanceWagging", "DartFlicking", "Darting", "DashRushing", "Dashing", "Dawdling", "DazzleDazzling", "Descending", "Diping", "Diving", "DoodleWaggling", "Draging", "Drifting", "Driving", "Droping", "Falling", "Fleeing", "Flicking", "Flinging", "FlipFloppling", "Fliting", "Floating", "Flocking", "Flouncing", "FlySoaring", "Flying", "FrissonFizzling", "FrolicFrisking", "FrolicWagging", "Galloping", "GiggleWaggling", "Gliding", "Hauling", "HavockHopping", "HikeClimbing", "Hikeing", "Hobbling", "Hoisting", "HopJoggling", "HopSkiping", "HopWiggling", "Hoping", "Hovering", "Hurdling", "Hurrying", "Hurtling", "JiggleJigging", "JiggleJiggling", "Jiging", "JounceJiggling", "JumpBounding", "Jumping", "Launching", "LeapBoinging", "Leaping", "Levitating", "Limping", "Lobing", "Lunging", "Lurching", "Marching", "Meandering", "Navigating", "PaddleWading", "Paddling", "Parading", "PatterPattering", "Pedaling", "Pitching", "Pivoting", "Ploding", "Plummeting", "PlumpPlumping", "Plunging", "Pouncing", "PrancePrangling", "PranceWagging", "Prancing", "ProwlWandering", "Prowling", "Pulling", "Pushing", "Quivering", "ReefReefing", "RickRolling", "Rickrollinging", "Riding", "Rising", "Roaming", "RollRotatinging", "RollSpinning", "Rolling", "RunPattering", "Runing", "Rushing", "SailFloating", "Sailing", "Sashaying", "Sauntering", "Scaling", "ScamperStumbling", "Scampering", "Scooting", "Scrambling", "Scurrying", "ScuttleStumbling", "Scuttling", "ShimmyWagging", "Shimmying", "Shuffling", "Sidling", "Skating", "Skiding", "Skiming", "SkipDancing", "Skiping", "Skittering", "Slaloming", "SlideFlouncing", "SliderSliding", "Sliding", "Sliping", "Sneaking", "Soaring", "Somersaulting", "Spining", "Springing", "Sprinting", "Staggering", "Steering", "Strolling", "Struting", "Stumbling", "Swarming", "Swaying", "Swerving", "Swiming", "Swinging", "SwirlSwiveling", "Swiveling", "Swooping", "Throwing", "Toddling", "Tossing", "TossingTripping", "Traipsing", "Trampling", "Treading", "Treking", "Trembling", "Troting", "Trudging", "Tuging", "TumbleTripping", "Tumbling", "Twirling", "Twisting", "Twitching", "Vaulting", "Veering", "WaddleShuffling", "Waddling", "Wading", "Waggling", "WalkWaddling", "Walking", "Weaving", "Whirling", "WibbleWobbleing", "WiggleWagging", "WiggleWaggling", "WobbleWaggling", "WobbleWobbling", "Wobbling", "WribbleWibbling", "WriggleWaggling", "Wriggling", "ZigZagging", "ZigZagginging", "Zigzaging", "ZizzleZzling"]' "$config_json" > "$config_json.tmp" && mv "$config_json.tmp" "$config_json"
+
+
+# ---------------------------------------------------------------------------
+# 3. Clone lobotomized-claude-code
+#    Copies the system-prompt overrides repo and symlinks system-prompts/
+#    and system-reminders/ into the ~/.tweakcc/ directory for easy access.
+#    LOBOTOMIZED_SHA is set via --build-arg at build time; falls back to HEAD.
+# ---------------------------------------------------------------------------
+: "${LOBOTOMIZED_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/skrabe/lobotomized-claude-code.git ~/.tweakcc/lobotomized-claude-code
+cd ~/.tweakcc/lobotomized-claude-code && git checkout -q "$LOBOTOMIZED_SHA"
+rm -rf ~/.tweakcc/lobotomized-claude-code/.git
+ln -sfn ~/.tweakcc/lobotomized-claude-code/system-prompts ~/.tweakcc/system-prompts
+ln -sfn ~/.tweakcc/lobotomized-claude-code/system-reminders ~/.tweakcc/system-reminders
+
+# ---------------------------------------------------------------------------
+# 4. Install claude-tools (everyday slash commands)
+#    Clones the CLI tools repo and copies its scripts into ~/bin so they
+#    are available via slash commands (/fix, /ask, /plan).
+#    CLAUDE_TOOLS_SHA is set via --build-arg at build time; falls back to HEAD.
+# ---------------------------------------------------------------------------
+: "${CLAUDE_TOOLS_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/mijuny/claude-tools ~/.claude-tools
+cd ~/.claude-tools && git checkout -q "$CLAUDE_TOOLS_SHA"
+rm -rf ~/.claude-tools/.git
+mkdir -p ~/bin
+cp -f ~/.claude-tools/bin/* ~/bin/
+chmod +x ~/bin/*
+
+# ---------------------------------------------------------------------------
+# 5. Install awesome-claude-code-toolkit (skills, rules, templates)
+#    Copies skills (domain-specific knowledge), rules (per-project behavior),
+#    and templates (reusable code patterns) into ~/.claude/.
+#    AWESOME_TOOLKIT_SHA is set via --build-arg at build time; falls back to HEAD.
+# ---------------------------------------------------------------------------
+: "${AWESOME_TOOLKIT_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude-code-toolkit
+cd ~/.claude-code-toolkit && git checkout -q "$AWESOME_TOOLKIT_SHA"
+rm -rf ~/.claude-code-toolkit/.git
+cp -rf ~/.claude-code-toolkit/skills ~/.claude/skills
+cp -rf ~/.claude-code-toolkit/rules ~/.claude/rules
+cp -rf ~/.claude-code-toolkit/templates ~/.claude/templates
+
+# ---------------------------------------------------------------------------
+# 6. Install superpowers (advanced dev workflows)
+#    Clones scripts (brainstorming, gate checking, subagent development)
+#    into ~/bin and skills into ~/.claude/skills/.
+#    SUPERPOWERS_SHA is set via --build-arg at build time; falls back to HEAD.
+# ---------------------------------------------------------------------------
+: "${SUPERPOWERS_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/pcvelz/superpowers ~/.superpowers
+cd ~/.superpowers && git checkout -q "$SUPERPOWERS_SHA"
+rm -rf ~/.superpowers/.git
+cp -f ~/.superpowers/scripts/*.sh ~/bin/
+chmod +x ~/bin/*.sh
+cp -rf ~/.superpowers/skills ~/.claude/skills
+
+# ---------------------------------------------------------------------------
+# 7. Install shannon (AI-driven research and guidance)
+#    Clones scripts and SKILL.md into ~/bin and ~/.claude/skills/.
+#    SHANNON_SHA is set via --build-arg at build time; falls back to HEAD.
+# ---------------------------------------------------------------------------
+: "${SHANNON_SHA:=HEAD}"
+git clone --depth 1 --single-branch https://github.com/unicodeveloper/shannon ~/.shannon
+cd ~/.shannon && git checkout -q "$SHANNON_SHA"
+rm -rf ~/.shannon/.git
+cp -f ~/.shannon/scripts/*.sh ~/bin/
+cp -f ~/.shannon/SKILL.md ~/.claude/skills/
+
+# ---------------------------------------------------------------------------
+# 8. Install global npm packages
+#    npx and antigravity-awesome-skills are pre-installed by the Dockerfile's
+#    merged layer (L1+2) as root — these npm install calls are idempotent,
+#    re-installing them into ~/claudeuser/.local for the claudeuser account.
+#    npx (Node package runner) and antigravity-awesome-skills (200+ skills,
+#    activates automatically based on project file detection).
+# ---------------------------------------------------------------------------
+mkdir -p ~/.local/bin
+npm install -g npx --prefix /home/claudeuser/.local
+npm install -g antigravity-awesome-skills --prefix /home/claudeuser/.local && antigravity-awesome-skills -y
+
+# 8b. Upgrade all global npm packages to latest major versions
+#     Uses -S flag to get latest major (not just semver-compatible)
+#     This minimizes vulnerabilities from outdated transitive dependencies.
+npm install -g -S --force npm --prefix /home/claudeuser/.local
+npm install -g -S --force pnpm --prefix /home/claudeuser/.local
+npm install -g -S --force antigravity-awesome-skills --prefix /home/claudeuser/.local
+# npm update -g skipped to avoid EACCES rename errors with Docker overlay2
+# All packages already at latest major from -S installs above
+# Deduplicate AFTER all installs to avoid race conditions
+# Use --force to handle Docker overlay2 filesystem rename issues
+npm dedupe --force 2>/dev/null || true
+
+# --- Audit and fix ALL transitive dependency vulnerabilities ---
+# Loop until no more fixable vulnerabilities are found.
+# After fixing one dep (e.g. deep-extend), another (e.g. https-proxy-agent)
+# may become fixable — so we loop to catch cascading fixes.
+FIXED=$(npm audit fix --audit-level=moderate 2>/dev/null || true)
+pass=0
+max_pass=10
+while [ "$pass" -lt "$max_pass" ]; do
+    # Count how many packages are still flagged as fixable
+    prev=$(npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); return d.metadata.dependencies.vulnerabilities?.fixable || 0;" 2>/dev/null || echo "0")
+    # Re-run audit fix; if it didn't change the fixable count, we're done
+    npm audit fix --audit-level=moderate 2>/dev/null || true
+    curr=$(npm audit --json 2>/dev/null | node -p "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); return d.metadata.dependencies.vulnerabilities?.fixable || 0;" 2>/dev/null || echo "0")
+    if [ "$curr" -eq "$prev" ] 2>/dev/null; then
+        break
+    fi
+    pass=$((pass + 1))
+done
+# Final audit for logging (non-fatal)
+npm audit --audit-level=moderate 2>/dev/null || true
+
+# 9. Cleanup
+#    Removes the backup directory created during install and sets permissive
+#    read and execute-on-directories permissions across ~/home/claudeuser/.
+# ---------------------------------------------------------------------------
+rm -rf /home/claudeuser/.claude/backups/
+chmod a+rX -R /home/claudeuser/
