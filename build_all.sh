@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 SCRIPT_DIR="$(pwd)"
 BASE=t2fn/claude-abliterated
+VERSION_FILE=.claude-latest-version
 
 # Source pinned SHAs if the file exists
 if [ -z "${FORCE_LS:-}" ] && [ -f "${SCRIPT_DIR}/source.shas" ]; then

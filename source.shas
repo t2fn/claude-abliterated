@@ -1,0 +1,27 @@
+# source.shas — Pinned SHAs for all source repositories.
+#
+# These SHAs are reviewed and pinned. When a repo is updated,
+# update the SHA here and re-run the build.
+#
+# To reset a SHA to dynamic HEAD:
+#   unset <SHA_NAME>
+# To force dynamic HEAD for all:
+#   export FORCE_LS=1
+
+# tweakcc-fixed — Claude Code patches (named-prompt overrides, inline-blob, system reminders)
+TWEAKCC_SHA=d272760c277f2800df528f21e10c58d5a9032e88
+
+# lobotomized-claude-code — system-prompt and system-reminders overrides
+LOBOTOMIZED_SHA=19d8280eb834781995d3c6b1871529500992bbc9
+
+# claude-tools — everyday slash commands (/fix, /ask, /plan)
+CLAUDE_TOOLS_SHA=e30f60113d31d0c2b426b7e0c7e6202eff02c96a
+
+# awesome-claude-code-toolkit — skills, rules, templates
+AWESOME_TOOLKIT_SHA=ebdf1d596d2cde5c5cceb32177e8d1cf4829e7d9
+
+# superpowers — brainstorming, gate checking, subagent development
+SUPERPOWERS_SHA=bd000c6ec1df53449a74397f55305b22802b9a2b
+
+# shannon — AI-driven research and guidance
+SHANNON_SHA=6a97124bee816c7cc76c6e17bb2b0fe8c0eae032
