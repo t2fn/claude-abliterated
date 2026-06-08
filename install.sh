@@ -44,6 +44,8 @@ bash /tmp/claude-install.sh "$CLAUDE_VERSION"
 # ---------------------------------------------------------------------------
 : "${TWEAKCC_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/skrabe/tweakcc-fixed.git ~/dev/tweakcc-fixed
+# Fetch the specific SHA into the shallow clone's history (needed for older tag SHAs).
+git fetch origin "${TWEAKCC_SHA}" 2>/dev/null || true
 cd ~/dev/tweakcc-fixed && git checkout -q "$TWEAKCC_SHA"
 rm -rf ~/dev/tweakcc-fixed/.git
 cd ~/dev/tweakcc-fixed && pnpm install --include=optional && pnpm build
@@ -60,6 +62,7 @@ jq '.settings.thinkingVerbs.verbs = ["Accelerating", "Ambling", "Ascending", "Bo
 # ---------------------------------------------------------------------------
 : "${LOBOTOMIZED_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/skrabe/lobotomized-claude-code.git ~/.tweakcc/lobotomized-claude-code
+git fetch origin "${LOBOTOMIZED_SHA}" 2>/dev/null || true
 cd ~/.tweakcc/lobotomized-claude-code && git checkout -q "$LOBOTOMIZED_SHA"
 rm -rf ~/.tweakcc/lobotomized-claude-code/.git
 ln -sfn ~/.tweakcc/lobotomized-claude-code/system-prompts ~/.tweakcc/system-prompts
@@ -73,6 +76,7 @@ ln -sfn ~/.tweakcc/lobotomized-claude-code/system-reminders ~/.tweakcc/system-re
 # ---------------------------------------------------------------------------
 : "${CLAUDE_TOOLS_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/mijuny/claude-tools ~/.claude-tools
+git fetch origin "${CLAUDE_TOOLS_SHA}" 2>/dev/null || true
 cd ~/.claude-tools && git checkout -q "$CLAUDE_TOOLS_SHA"
 rm -rf ~/.claude-tools/.git
 mkdir -p ~/bin
@@ -87,6 +91,7 @@ chmod +x ~/bin/*
 # ---------------------------------------------------------------------------
 : "${AWESOME_TOOLKIT_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude-code-toolkit
+git fetch origin "${AWESOME_TOOLKIT_SHA}" 2>/dev/null || true
 cd ~/.claude-code-toolkit && git checkout -q "$AWESOME_TOOLKIT_SHA"
 rm -rf ~/.claude-code-toolkit/.git
 cp -rf ~/.claude-code-toolkit/skills ~/.claude/skills
@@ -101,6 +106,7 @@ cp -rf ~/.claude-code-toolkit/templates ~/.claude/templates
 # ---------------------------------------------------------------------------
 : "${SUPERPOWERS_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/pcvelz/superpowers ~/.superpowers
+git fetch origin "${SUPERPOWERS_SHA}" 2>/dev/null || true
 cd ~/.superpowers && git checkout -q "$SUPERPOWERS_SHA"
 rm -rf ~/.superpowers/.git
 cp -f ~/.superpowers/scripts/*.sh ~/bin/
@@ -114,6 +120,7 @@ cp -rf ~/.superpowers/skills ~/.claude/skills
 # ---------------------------------------------------------------------------
 : "${SHANNON_SHA:=HEAD}"
 git clone --depth 1 --single-branch https://github.com/unicodeveloper/shannon ~/.shannon
+git fetch origin "${SHANNON_SHA}" 2>/dev/null || true
 cd ~/.shannon && git checkout -q "$SHANNON_SHA"
 rm -rf ~/.shannon/.git
 cp -f ~/.shannon/scripts/*.sh ~/bin/
@@ -170,3 +177,10 @@ npm audit --audit-level=moderate 2>/dev/null || true
 # ---------------------------------------------------------------------------
 rm -rf /home/claudeuser/.claude/backups/
 chmod a+rX -R /home/claudeuser/
+
+# 10. Ensure plugin directories exist for the start/stop hook infrastructure.
+#     pre-start.d  — sourced by start_claude.sh near the top.
+#     post-stop.d  — sourced during cleanup (EXIT) in start_claude.sh.
+# Users can drop *.sh files into these directories for custom plugins.
+# ---------------------------------------------------------
+mkdir -p /home/claudeuser/pre-start.d /home/claudeuser/post-stop.d

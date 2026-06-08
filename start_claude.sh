@@ -74,6 +74,28 @@ OLLAMA_PID=""
 OLLAMA_STARTED=0
 
 # ============================================================================
+# Plugin directories — pre-start and post-stop hooks.
+# Pre-start scripts are sourced (same shell context) near the top.
+# Post-stop scripts are invoked during cleanup on EXIT.
+# ============================================================================
+PRE_START_DIR="/home/claudeuser/pre-start.d"
+POST_STOP_DIR="/home/claudeuser/post-stop.d"
+POST_STOP_RUN=0  # Guard: only run post-stop scripts once.
+
+# ============================================================================
+# Pre-start plugins — source all *.sh in pre-start.d (alphabetical order).
+# Scripts are sourced (not exec'd), so they share the same shell context
+# and can set/override environment variables for the rest of the script.
+# ============================================================================
+for hook in "${PRE_START_DIR}"/*.sh; do
+    [ -f "$hook" ] || continue
+    [ -r "$hook" ] || continue
+    echo "[pre-start] sourcing ${hook}"
+    source "$hook"
+done
+unset hook
+
+# ============================================================================
 # API URL and key resolution.
 # Derive ANTHROPIC_BASE_URL from OPENAI_BASE_URL (strip trailing /v1).
 # Derive ANTHROPIC_AUTH_TOKEN from OPENAI_API_KEY.
@@ -148,7 +170,7 @@ if [[ "$ANTHROPIC_BASE_URL" == socket://* ]]; then
 fi
 
 # ============================================================================
-# cleanup — kill ollama and socat on exit.
+# cleanup — kill ollama and socat on exit; invoke post-stop.d plugins.
 # ============================================================================
 cleanup() {
     # Stop ollama if this script started it.
@@ -166,6 +188,17 @@ cleanup() {
     # Clean up the temp port file.
     if [ -n "$SOCKET_PORT_FILE" ] && [ -e "$SOCKET_PORT_FILE" ]; then
         rm -f "$SOCKET_PORT_FILE"
+    fi
+    # Invoke post-stop.d plugins (only once).
+    if [ "$POST_STOP_RUN" -eq 0 ]; then
+        POST_STOP_RUN=1
+        for hook in "${POST_STOP_DIR}"/*.sh; do
+            [ -f "$hook" ] || continue
+            [ -r "$hook" ] || continue
+            echo "[post-stop] sourcing ${hook}"
+            source "$hook"
+        done
+        unset hook
     fi
 }
 trap cleanup EXIT
