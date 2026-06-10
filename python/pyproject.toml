@@ -1,0 +1,114 @@
+# pyproject.toml — Python linting & code quality configuration
+# Used by: ruff, black, isort, mypy, bandit, pyright
+#
+# Recommended workflow:
+#   ruff check .            # fast linting (recommended for CI)
+#   ruff check --fix .      # auto-fix
+#   ruff format .           # format code (replaces black)
+#   pylint .                # comprehensive linting
+#   mypy .                  # type checking
+#   bandit -r .             # security audit
+#   pyupgrade *.py          # upgrade syntax
+
+# ============================================================
+# ruff — Fast unified linter + formatter (RECOMMENDED)
+# ============================================================
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+# Rules enabled by default + additional recommendations
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "DTZ",    # flake8-datetimez
+    "RUF",    # ruff-specific rules
+    "PLE",    # pylint error
+    "PLR",    # pylint refactor
+    "PLW",    # pylint warning
+    "G",      # flake8-logging-format
+    "RET",    # flake8-return
+    "C4",     # flake8-comprehensions
+    "PIE",    # flake8-pie
+    "PYI",    # flake8-pyi
+]
+
+# Rules to ignore
+ignore = [
+    "E501",   # line length handled by formatter
+    "RET504", # unecessary-assign (too noisy)
+    "SIM108", # use-ternary-operator (prefer readability)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]  # unused imports in __init__
+"test_*.py"   = ["PLR2004", "S101"]  # magic numbers and assertions in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ============================================================
+# black — Code formatter (alternative to ruff format)
+# ============================================================
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+# ============================================================
+# isort — Import sorting
+# ============================================================
+
+[tool.isort]
+line_length = 100
+profile = "black"
+known_first_party = []
+sections = ["FUTURE", "BUILTIN", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# ============================================================
+# mypy — Static type checking
+# ============================================================
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "test_*"]
+disallow_untyped_defs = false
+
+# ============================================================
+# bandit — Security linter
+# ============================================================
+
+[tool.bandit]
+targets = ["."]
+skips = ["B101"]  # skip assert_used
+exclude_dirs = ["tests", ".git", "__pycache__"]
+
+# ============================================================
+# pyright — Microsoft's type checker
+# ============================================================
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.10"
+include = ["."]
+exclude = ["**/__pycache__", "**/*.egg-info", ".git", "tests"]

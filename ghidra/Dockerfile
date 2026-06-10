@@ -21,7 +21,7 @@ FROM docker.io/t2fn/claude-abliterated:rocky10-amd64
 # == Build args ==
 ARG GHIDRA_VER=12.1.2 \
     GHIDRA_DATE=20260303 \
-    GHIDRA_MCP_URL=https://github.com/t2fn/ghidra-docker-mcp.git
+    GHIDRA_MCP_URL=https://github.com/t2fn/ghidra-mcp.git
 
 # == Environment (set before switching to root for dnf installs) ==
 ENV GHIDRA_VERSION=$GHIDRA_VER \
@@ -47,11 +47,14 @@ RUN dnf install -y java-21-openjdk-headless java-21-openjdk-devel javapackages-f
     unzip -q /tmp/ghidra.zip -d /opt && \
     mv /opt/ghidra_${GHIDRA_VERSION}_PUBLIC ${GHIDRA_INSTALL_DIR} && \
     rm /tmp/ghidra.zip && \
-    chmod +x ${GHIDRA_INSTALL_DIR}/Ghidra/Features/Decompiler/os/*/decompile* 2>/dev/null || true && \
+    chmod +x ${GHIDRA_INSTALL_DIR}/Ghidra/Features/Decompiler/os/*/decompile* 2>/dev/null && \
     PLATFORM="linux_x86_64" && \
     test -x "${GHIDRA_INSTALL_DIR}/Ghidra/Features/Decompiler/os/${PLATFORM}/decompile" \
     || (echo "FATAL: decompiler not found for ${PLATFORM}" && exit 1) && \
     git clone --depth 1 --single-branch "$GHIDRA_MCP_URL" ${GHIDRA_MCP_INSTALL_DIR} && \
+    # bethington/ghidra-mcp uses PEP 723 inline script (no top-level pyproject.toml)
+    # Write one so `pip install -e .[sse,dev]` works:
+    printf '[build-system]\nrequires = ["setuptools>=68.0", "wheel"]\nbuild-backend = "setuptools.build_meta"\n\n[project]\nname = "ghidra-mcp"\nversion = "5.13.1"\nrequires-python = ">=3.10"\ndependencies = [\n    "mcp>=1.27.2,<2.0.0",\n    "requests>=2.32.0,<3.0.0",\n]\n\n[project.optional-dependencies]\nsse = []\ndev = []\n\n[project.scripts]\nghidra-mcp = "bridge_mcp_ghidra:main"\n\n[tool.setuptools]\npy-modules = ["bridge_mcp_ghidra"]\n' > ${GHIDRA_MCP_INSTALL_DIR}/pyproject.toml && \
     python3 -m pip install --break-system-packages --no-cache-dir \
         -e ${GHIDRA_MCP_INSTALL_DIR}[sse,dev] && \
     rm -rf ${GHIDRA_MCP_INSTALL_DIR}/.git && \

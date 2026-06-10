@@ -1,0 +1,72 @@
+# cargo_deny.toml — cargo-deny configuration for Rust development
+#
+# Run: cargo deny check
+#
+# Configures license checking, advisory scanning, and dependency analysis.
+
+# === License configuration ===
+[licenses]
+# Allowed license IDs (SPDX identifiers)
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unlicense",
+    "CC0-1.0",
+    "Unicode-3.0",
+    "Zlib",
+    "MPL-2.0",
+    "OpenSSL",
+    "Unicode-DFS-2016",
+]
+
+# Disallowed license IDs
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+    "AGPL-3.0",
+]
+
+# Confidence threshold for license matching
+confidence = 0.92
+
+# === Advisory configuration ===
+[advisories]
+# Yanked crates are considered errors
+yanked = "error"
+
+# Ignore specific advisories (by ID)
+# ignore = [
+#     "RUSTSEC-2024-0000",
+# ]
+
+# === Output configuration ===
+[output]
+# Show all dependencies in output
+all_features = true
+no_default_features = false
+
+# === Dependency graph checks ===
+# Ensure no circular dependencies
+# (cargo-deny checks this by default)
+
+# === Feature unification ===
+# Warn when feature unification could cause unexpected behavior
+feature-unification = true
+
+# === Recommended cargo-deny workflow for Claude ===
+#
+# 1. cargo deny check              — check licenses + advisories + deps
+# 2. cargo deny check --graph     — show dependency graph
+# 3. cargo deny check --workspace — check all workspace crates
+# 4. cargo deny check --format json  — machine-readable output
+#
+# Common commands:
+#   cargo deny check                 # Full check (licenses + advisories + features)
+#   cargo deny check --workspace     # Check all workspace members
+#   cargo deny graph                 # Show dependency graph
+#   cargo deny init                  # Generate default config
+#   cargo deny list                  # List all dependencies with licenses
+#

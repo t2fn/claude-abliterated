@@ -13,7 +13,7 @@
 #   IMAGE_TAG    — Docker image tag    (default: latest)
 #   GHIDRA_VER   — Ghidra version      (default: 12.0.4)
 #   GHIDRA_DATE  — Ghidra date         (default: 20260303)
-#   GHIDRA_MCP_URL — ghidra-mcp repo URL (default: https://github.com/wellingtonlee/ghidra-docker-mcp.git)
+#   GHIDRA_MCP_URL — ghidra-mcp repo URL (default: https://github.com/bethington/ghidra-mcp.git)
 #   SMOKE_TEST   — If "0", skip the smoke test
 # ==================================================================
 
@@ -24,7 +24,7 @@ IMAGE_NAME="${IMAGE_NAME:-t2fn/ghidra-claude-abliterated}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 GHIDRA_VER="${GHIDRA_VER:-12.0.4}"
 GHIDRA_DATE="${GHIDRA_DATE:-20260303}"
-GHIDRA_MCP_URL="${GHIDRA_MCP_URL:-https://github.com/wellingtonlee/ghidra-docker-mcp.git}"
+GHIDRA_MCP_URL="${GHIDRA_MCP_URL:-https://github.com/bethington/ghidra-mcp.git}"
 #SMOKE_TEST="${SMOKE_TEST}"
 
 # ── Source pinned SHAs ──

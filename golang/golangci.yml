@@ -1,0 +1,54 @@
+# golangci-lint configuration — recommended flags for complexity, length, and file splitting
+#
+# Run: golangci-lint run -c golangci.yml ./...
+#
+# Complexity & Length (prevents overly complex/long functions, encourages file splitting)
+linters-settings:
+  gocognit:
+    min: 15          # cognitive complexity threshold per function
+  funlen:
+    lines: 150       # max lines per function before flagging
+    statements: 40   # max statements per function before flagging
+  cyclop:
+    test: true       # higher limits in test files
+    the-outer-limit: 20
+    deep-nesting: 4  # warn on deep nesting (>4 levels)
+  gocyclo:
+    min: 10          # cyclomatic complexity threshold per function
+  goconst:
+    min-len: 3       # string constant length threshold
+    min-occurrences: 3  # how many times a constant must repeat
+
+# Recommended linters for clean, well-structured Go code
+linters:
+  enable:
+    - gocognit       # cognitive complexity
+    - funlen         # function length
+    - gocyclo        # cyclomatic complexity
+    - gofmt          # standard formatting
+    - goimports      # import organization
+    - govet          # suspicious constructs
+    - errcheck       # unchecked errors
+    - staticcheck    # default lint tool (comprehensive)
+    - revive         # enhanced golint
+    - unused         # unused code
+    - ineffassign    # ineffective assignments
+    - gosimple       # simplification suggestions
+    - typecheck      # type checking
+
+  disable:
+    # disabled by default — enable only if needed
+    # - deadcode
+    # - varcheck
+    # - godox
+
+run:
+  timeout: 5m
+  tests: true        # include test files in analysis
+  skip-files:
+    - ".*_test\\.go$"   # skip pure test files (run separately with -test flag)
+
+issues:
+  max-issues-per-linter: 50  # cap output per linter
+  max-same-issues: 10        # cap per file/line
+  exclude-use-default: false # use our custom config, not defaults

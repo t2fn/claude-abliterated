@@ -1,0 +1,59 @@
+# clippy.toml — Clippy linter configuration for Rust development
+#
+# Run: cargo clippy -c clippy.toml -- -D warnings
+#
+# Configuration for Claude-driven Rust development:
+# - Strict warnings (deny on warnings)
+# - Complexity and length thresholds for clean, well-structured code
+# - Focus on correctness, readability, and idiomatic Rust
+
+# === Complexity & Length ===
+# Maximum function length (lines before warning)
+max-fn-params = 7
+# Maximum struct field count
+max-struct-fields = 10
+
+# === Style ===
+# Allow single-element arrays (common in Rust API design)
+single-element-array = false
+# Allow unwrapping in const contexts
+allow-unwrap-in-tests = true
+# Allowdbg! in tests
+allow-dbg-in-tests = true
+
+# === Pedantic lints (recommended for clean code) ===
+# pedantic lints catch style issues that go beyond correctness
+
+# === Restriction lints (opt-in, strict) ===
+# Consider enabling in CI for production code:
+# - clippy::expect_used    — prefer unwrap over expect
+# - clippy::todo           — disallow todo!() in production
+# - clippy::unimplemented  — disallow unimplemented!() in production
+
+# === Recommended clippy groups ===
+# Run with these groups for comprehensive checking:
+#
+#   cargo clippy -- -W clippy::all          — all lints (warn)
+#   cargo clippy -- -D clippy::correctness  — deny correctness issues
+#   cargo clippy -- -D clippy::suspicious    — deny suspicious patterns
+#   cargo clippy -- -W clippy::style         — warn on style issues
+#   cargo clippy -- -W clippy::complexity    — warn on complexity
+#   cargo clippy -- -W clippy::perf           — warn on performance
+#   cargo clippy -- -W clippy::pedantic       — warn on pedantic (opinionated)
+#   cargo clippy -- -D warnings               — deny all warnings (strictest)
+#
+# For Claude: use -D warnings to ensure generated code is clean
+
+# === Cross-compilation ===
+# All cross-compilation targets are available:
+# - x86_64-unknown-linux-gnu    (native)
+# - x86_64-unknown-linux-musl   (static)
+# - aarch64-unknown-linux-gnu   (ARM 64-bit)
+# - aarch64-unknown-linux-musl  (ARM 64-bit static)
+# - arm-unknown-linux-gnueabihf (ARM 32-bit)
+# - armv7-unknown-linux-gnueabihf (ARMv7 32-bit)
+# - powerpc64-unknown-linux-gnu (PowerPC 64-bit)
+# - riscv64gc-unknown-linux-gnu (RISC-V 64-bit)
+#
+# Cross-compile: cargo build --target <target-triple>
+# Cross-compile with clippy: cargo clippy --target <target-triple>

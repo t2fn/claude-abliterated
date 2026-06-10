@@ -69,7 +69,7 @@ else
 fi
 
 # --- Check ghidra-mcp ---
-mcp_repo="wellingtonlee/ghidra-docker-mcp"
+mcp_repo="bethington/ghidra-mcp"
 # Check if it's a git clone (no tags) or pip install
 mcp_has_tags=$(curl -sL "https://api.github.com/repos/${mcp_repo}/tags?per_page=1" | jq 'length > 0' 2>/dev/null || echo false)
 
