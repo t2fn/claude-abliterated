@@ -412,3 +412,39 @@ cargo semver-checks  # API compliance
 - **Unused dependencies** — run `cargo outdated` and `cargo deny check` before committing
 - **Missing clippy lints** — run `cargo clippy -- -D warnings` before committing
 - **Inconsistent formatting** — run `cargo fmt` before committing
+
+---
+
+## Linting Philosophy — No Silent File-Touching
+
+### Pre-loaded configs
+All linting configs are pre-loaded in the container with best-practice rules.
+They guide behavior but do NOT auto-run. Rules are documented in SKILL.md.
+
+### What Claude should do:
+
+**NEW files Claude writes:**
+- Auto-lint with the project's primary linter before presenting to the user.
+- Auto-fix is always safe here — these are Claude's own files.
+- Use the project's config (clippy.toml / cargo_deny.toml) — no need to ask.
+
+**EXISTING code:**
+- Do NOT touch unless Claude is explicitly tasked with it.
+- If Claude notices linting issues while doing a task, report them and ask:
+  "Found some linting issues in file.rs, lint it?"
+- Only apply linting/auto-fix when the user confirms (yes/no).
+- Run lint read-only (check-only) first if the user is unsure.
+
+### Key rules:
+1. **Don't assume the user wants linting** — offer it, let them decide.
+2. **Don't auto-lint on startup** — only report tool versions. Real linting
+   happens when Claude is tasked with code quality work.
+3. **Don't silently modify files** — ask before touching existing code.
+   A file you didn't write is not yours to change without permission.
+4. **Auto-lint what you write** — new files get auto-linted before presenting.
+
+### Tool status:
+```bash
+# Linting tools are available and versions are reported on startup.
+# They will NOT run automatically — they wait for Claude to be tasked.
+```

@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  checkstyle.xml — Recommended Checkstyle configuration for Claude-driven Java development.
+  Mirrors the Google Java Style Guide with relaxed line length (120) and sensible defaults.
+
+  Usage:
+    checkstyle -c /home/claudeuser/checkstyle.xml **/*.java
+
+  Rules mapped:
+    - Naming conventions (UpperCamelCase classes, lowerCamelCase members)
+    - Import ordering (java/javax first, then others, no wildcards)
+    - Javadoc requirements (package, type, method)
+    - Line length (max 120 chars)
+    - Whitespace and indentation (2 spaces)
+    - Brace style (K&R)
+    - Empty line rules
+    - Modifier ordering
+    - Array style
+-->
+
+<module name="Checker">
+  <!-- Root checker settings -->
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="warning"/>
+
+  <!-- File length check -->
+  <module name="FileLength">
+    <property name="max" value="1500"/>
+  </module>
+
+  <!-- Line length (relaxed from 100 to 120 for Claude readability) -->
+  <module name="LineLength">
+    <property name="max" value="120"/>
+    <property name="fileExtensions" value="java"/>
+  </module>
+
+  <module name="TreeWalker">
+
+    <!-- ===== Naming Conventions ===== -->
+    <!-- Class and interface names: UpperCamelCase -->
+    <module name="UpperCamelCase">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Method and variable names: lowerCamelCase -->
+    <module name="LowerCamelCase">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Constant names: UPPER_SNAKE_CASE -->
+    <module name="ConstantName">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Parameter names: lowerCamelCase -->
+    <module name="ParameterName">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Local variable names: lowerCamelCase -->
+    <module name="LocalVariableName">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Member names: lowerCamelCase -->
+    <module name="MemberName">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Static variable names: UPPER_SNAKE_CASE -->
+    <module name="StaticVariableName">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- ===== Import Rules ===== -->
+    <!-- No wildcard imports (except java.util.Collections.emptyMap etc.) -->
+    <module name="AvoidStarImport">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Import ordering: java.* then javax.* then others -->
+    <module name="ImportOrder">
+      <property name="severity" value="warning"/>
+      <property name="groups" value="java,javax,*,"/>
+      <property name="ordered" value="true"/>
+      <property name="separated" value="true"/>
+    </module>
+
+    <!-- Unused imports -->
+    <module name="UnusedImports">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- ===== Javadoc ===== -->
+    <!-- Package-info.java required -->
+    <module name="JavadocPackage">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Javadoc on public types -->
+    <module name="JavadocType">
+      <property name="severity" value="warning"/>
+      <property name="scope" value="public"/>
+    </module>
+
+    <!-- Javadoc on public methods -->
+    <module name="JavadocMethod">
+      <property name="severity" value="warning"/>
+      <property name="scope" value="public"/>
+      <property name="allowMissingReturnTag" value="true"/>
+    </module>
+
+    <!-- ===== Whitespace & Indentation ===== -->
+    <!-- Indentation: 2 spaces -->
+    <module name="Indentation">
+      <property name="severity" value="warning"/>
+      <property name="basicOffset" value="2"/>
+    </module>
+
+    <!-- Blank lines around class/method -->
+    <module name="EmptyLineSeparator">
+      <property name="severity" value="warning"/>
+      <property name="allowNoEmptyLineBetweenFields" value="true"/>
+    </module>
+
+    <!-- ===== Brace Style (K&amp;R) ===== -->
+    <module name="LeftCurly">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <module name="RightCurly">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- ===== Modifier Ordering ===== -->
+    <module name="ModifierOrder">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- ===== Code Style ===== -->
+    <!-- Avoid double semicolons -->
+    <module name="DoubleCheckedLocking">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Array bracket style: [, at end of line -->
+    <module name="ArrayTypeStyle">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Avoid numbered exceptions (catch (Exception e)) -->
+    <module name="AvoidNestedDepth">
+      <property name="severity" value="warning"/>
+      <property name="max" value="4"/>
+    </module>
+
+    <!-- Method length check (50 lines max) -->
+    <module name="MethodLength">
+      <property name="severity" value="warning"/>
+      <property name="max" value="50"/>
+    </module>
+
+    <!-- Cyclomatic complexity (10 max) -->
+    <module name="CyclomaticComplexity">
+      <property name="severity" value="warning"/>
+      <property name="max" value="10"/>
+    </module>
+
+    <!-- Cognitive complexity (15 max) -->
+    <module name="NPathComplexity">
+      <property name="severity" value="warning"/>
+      <property name="max" value="200"/>
+    </module>
+
+    <!-- ===== Auto-linting hooks for generated code ===== -->
+    <!-- Allow generated code to skip Javadoc checks -->
+    <module name="SuppressWarningsHolder">
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Suppress warnings with @SuppressWarnings -->
+    <module name="SuppressWarnings">
+      <property name="severity" value="warning"/>
+    </module>
+
+  </module>
+</module>

@@ -1,0 +1,85 @@
+{
+    "//": "gopls.json — Best-practice settings for Go language server",
+    "//": "Location: /home/claudeuser/.config/gopls/gopls.json",
+    "//": "Also read from: $GOPATH/pkg/gopls/gopls.json",
+    "//": "Apply: gopls set rpc/gopls/settings $(cat gopls.json)",
+
+    "build": {
+        "buildTags": "",
+        "env": {},
+        "compiler": "gc",
+        "buildmode": "exe",
+        "GOARCH": "amd64",
+        "GOOS": "linux",
+        "CGO_ENABLED": "1"
+    },
+
+    "checks": "+all,-ST1000,-ST1003",
+
+    "completion": {
+        "dedup": true,
+        "packageDocumentation": true,
+        "fuzzy": false
+    },
+
+    "diagnostics": {
+        "excludeGenerated": false,
+        "excludeLint": false,
+        "excludes": [
+            "golang.org/x/tools/cmd/godoc"
+        ]
+    },
+
+    "formatting": {
+        "goimports": true,
+        "localPrefix": "",
+        "rewriteRules": []
+    },
+
+    "hints": {
+        "assignVariableTypes": true,
+        "compositeLiteralFields": true,
+        "compositeLiteralTypes": true,
+        "constantLiteralValues": true,
+        "controlFlow": true,
+        "declaration": true,
+        "errorVerbose": true,
+        "namedResult": true,
+        "parameterTypes": true,
+        "parameterVariableTypes": true,
+        "rangeExpr": true,
+        "rangeExprNil": true,
+        "rangeExprNotNil": true,
+        "severity": "information",
+        "simpleResults": true,
+        "syntax": true,
+        "typesAndValues": true
+    },
+
+    "inlayHints": {
+        "assignVariableTypes": true,
+        "compositeLiteralFields": true,
+        "compositeLiteralTypes": true,
+        "constantLiteralValues": true,
+        "parameterTypes": true,
+        "requiresType": true,
+        "rangeExprTypes": true,
+        "width": 80
+    },
+
+    "languageServer": {
+        "maxConcurrentAnalysisJobs": 4,
+        "useBuiltInTools": true,
+        "useLanguageServer": true
+    },
+
+    "buildSelection": {
+        "files": [],
+        "packages": [],
+        "testPackages": []
+    },
+
+    "staticcheck": true,
+    "symbolMatcher": "prefix",
+    "useLanguageServer": true
+}

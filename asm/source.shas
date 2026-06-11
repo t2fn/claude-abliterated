@@ -1,0 +1,19 @@
+# == source.shas — Pinned SHA256 checksums for asm-claude Docker build ==
+# Source this file in build.sh to get the SHAs.
+# All values are placeholders — Docker build downloads fresh copies and verifies at runtime.
+# Update these values by downloading the binaries and running sha256sum.
+
+# GCC 14 (installed via dnf from base repo)
+# GCC_VER=14  — already in base image
+
+# binutils 2.43 (installed via dnf from base repo)
+# BINUTILS_VER=2.43  — already in base image
+
+# GDB 16.3 (installed via dnf from base repo)
+# GDB_VER=16.3  — already in base image
+
+# QEMU 9.2 (installed via dnf from base repo)
+# QEMU_VER=9.2  — already in base image
+
+# Cross-compilation toolchains (all installed via dnf)
+# All available in Rocky 10 / EPEL repos

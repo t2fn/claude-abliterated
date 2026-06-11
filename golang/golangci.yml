@@ -45,10 +45,10 @@ linters:
 run:
   timeout: 5m
   tests: true        # include test files in analysis
-  skip-files:
-    - ".*_test\\.go$"   # skip pure test files (run separately with -test flag)
 
 issues:
+  exclude-files:
+    - ".*_test\\.go$"   # skip pure test files (run separately with -test flag)
   max-issues-per-linter: 50  # cap output per linter
   max-same-issues: 10        # cap per file/line
   exclude-use-default: false # use our custom config, not defaults

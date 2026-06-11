@@ -64,10 +64,10 @@ echo "  SHANNON_SHA=$SHANNON_SHA"
 
 declare -A BUILDS=(
     ["${BASE}:rocky10"]="Dockerfile.rocky10 rockylinux/rockylinux:10 rocky10"
-    ["${BASE}:rocky9"]="Dockerfile.rocky9 rockylinux:9 rocky9"
-    ["${BASE}:ubuntu"]="Dockerfile.ubuntu24 ubuntu ubuntu"
-    ["${BASE}:debian"]="Dockerfile.debian debian debian"
-    ["${BASE}:alpine"]="Dockerfile.alpine alpine alpine"
+#    ["${BASE}:rocky9"]="Dockerfile.rocky9 rockylinux:9 rocky9"
+#    ["${BASE}:ubuntu"]="Dockerfile.ubuntu24 ubuntu ubuntu"
+#    ["${BASE}:debian"]="Dockerfile.debian debian debian"
+#    ["${BASE}:alpine"]="Dockerfile.alpine alpine alpine"
 )
 
 GX10="${GX10_HOST:-gx10}"

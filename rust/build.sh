@@ -80,7 +80,7 @@ for tool in $TOOLS; do
     if echo "$tool" | grep -q "^cargo-"; then
         # cargo subcommands
         base="${tool#cargo-}"
-        if cargo $base --version >/dev/null 2>&1 || cargo $base -h >/dev/null 2>&1 || test -f /usr/local/cargo/bin/cargo-$base || test -f /home/claudeuser/.cargo/bin/cargo-$base || command -v "cargo-$base" >/dev/null 2>&1 || test "$base" = "edit" -a -f /usr/local/cargo/bin/cargo-add; then
+        if cargo $base --version >/dev/null 2>&1 || cargo $base -h >/dev/null 2>&1 || test -f /usr/local/cargo/bin/cargo-$base || test -f /home/claudeuser/.cargo/bin/cargo-$base; then
             echo "[smoke] $tool: OK"
         else
             echo "[smoke] FAIL: $tool not found"

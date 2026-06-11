@@ -93,20 +93,18 @@ export GHIDRA_INSTALL_DIR
 export GHIDRA_ANALYSIS_TIMEOUT_SECONDS
 export GHIDRA_MAX_HEAP
 export JAVA_HOME
-export GHIDRA_MCP_PROJECT_NAME
-export GHIDRA_MCP_MODE
 export GHIDRA_MCP_PORT
 
 # --- Launch ghidra-mcp (set GHIDRA_MCP_STARTED before launch) ---
 export GHIDRA_MCP_STARTED=1
 
+# usage: ghidra-mcp [-h] [--mcp-host MCP_HOST] [--mcp-port MCP_PORT] [--transport {stdio,sse,streamable-http}] [--lazy] [--no-lazy]
+#                  [--default-groups DEFAULT_GROUPS]
+
 ghidra-mcp \
-    --project-dir /tmp/ghidra-mcp/projects \
-    --project-name "$GHIDRA_MCP_PROJECT_NAME" \
-    --mode "$GHIDRA_MCP_MODE" \
     --transport streamable-http \
-    --host 127.0.0.1 \
-    --port "$GHIDRA_MCP_PORT" \
+    --mcp-host 127.0.0.1 \
+    --mcp-port "$GHIDRA_MCP_PORT" \
     >> /tmp/ghidra-mcp.log 2>&1 &
 
 GHIDRA_MCP_PID=$!

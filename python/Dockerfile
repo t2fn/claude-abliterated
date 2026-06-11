@@ -60,12 +60,19 @@ RUN dnf install -y python3-devel python3-pip gcc make && \
     \
     chown -R claudeuser: /home/claudeuser
 
+RUN pip3 install pythondialog isort
+
 # == Layer 2: claudeuser. Hooks + config ==
 USER claudeuser
 
 # == Copy pre-start and post-stop hooks ==
 COPY hooks/pre-start.d/ /home/claudeuser/pre-start.d/
 COPY hooks/post-stop.d/ /home/claudeuser/post-stop.d/
+
+# == Copy SKILL.md into superpowers (standard location for Claude Code to discover) ==
+COPY SKILL.md /home/claudeuser/.superpowers/skills/python/SKILL.md
+
+# == Copy pyproject.toml config ==
 COPY pyproject.toml /home/claudeuser/pyproject.toml
 
 # == Working directory ==

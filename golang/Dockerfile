@@ -36,7 +36,17 @@ RUN ARCH=$(uname -m) && \
     tar -C /usr/local -xzf /tmp/go.tar.gz && \
     rm /tmp/go.tar.gz && \
     chown -R claudeuser: /usr/local/go /home/claudeuser && \
+    # Make ~/.cache 777 so alternate UID users can write to the cache
+    chmod -R 777 /home/claudeuser/.cache && \
     su -l -s /bin/bash -c "export PATH=\"/usr/local/go/bin:/home/claudeuser/go/bin:\$PATH\" && go install golang.org/x/tools/gopls@latest && go install github.com/go-delve/delve/cmd/dlv@latest && go install github.com/cweill/gotests/...@latest && go install github.com/haya14busa/goplay/cmd/goplay@latest && go install github.com/fatih/gomodifytags@latest && go install github.com/josharian/impl@latest && go install honnef.co/go/tools/cmd/staticcheck@latest && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && go install github.com/mgechev/revive@latest && go install github.com/go-critic/go-critic/cmd/gocritic@latest && go install golang.org/x/tools/cmd/goimports@latest && go install golang.org/x/tools/cmd/godoc@latest" claudeuser && \
+    # Fix gopls persistent index ownership (root-owned from Docker build)
+    mkdir -p /home/claudeuser/.cache/gopls && \
+    chown -R claudeuser: /home/claudeuser/.cache/gopls && \
+    # Wipe go cache and gopls index to save Docker image space
+    # (tools will re-download lazily; the binaries are already installed)
+    rm -rf /home/claudeuser/go/pkg/mod/cache/download && \
+    rm -rf /home/claudeuser/go/pkg/mod/cache/build && \
+    rm -rf /home/claudeuser/.cache/go-build && \
     echo "== Pre-flight checks ==" && \
     echo "Go: $(go version)" && \
     echo "gopls:  $(gopls version 2>&1 | head -1)" && \
@@ -60,8 +70,14 @@ USER claudeuser
 COPY hooks/pre-start.d/ /home/claudeuser/pre-start.d/
 COPY hooks/post-stop.d/ /home/claudeuser/post-stop.d/
 
-# == Copy golangci-lint config ==
-COPY golangci.yml /etc/golangci.yml
+# == Copy golangci-lint config (with best-practice rules) ==
+COPY golangci.yml /home/claudeuser/golangci.yml
+
+# == Copy gopls.json (pre-loaded best-practice settings) ==
+COPY gopls.json /home/claudeuser/.config/gopls/gopls.json
+
+# == Copy GOLANG.md into superpowers (standard location for Claude Code to discover) ==
+COPY GOLANG.md /home/claudeuser/.superpowers/skills/golang/SKILL.md
 
 # == Working directory ==
 WORKDIR /workdir

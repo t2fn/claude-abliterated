@@ -21,7 +21,8 @@ FROM docker.io/t2fn/claude-abliterated:rocky10-amd64
 # == Build args ==
 ARG GHIDRA_VER=12.1.2 \
     GHIDRA_DATE=20260303 \
-    GHIDRA_MCP_URL=https://github.com/t2fn/ghidra-mcp.git
+    GHIDRA_MCP_URL=https://github.com/t2fn/ghidra-mcp.git \
+    AI_GHIDRA_TOOLS_URL=https://github.com/Und3rf10w/ai-ghidra-tools.git
 
 # == Environment (set before switching to root for dnf installs) ==
 ENV GHIDRA_VERSION=$GHIDRA_VER \
@@ -52,6 +53,7 @@ RUN dnf install -y java-21-openjdk-headless java-21-openjdk-devel javapackages-f
     test -x "${GHIDRA_INSTALL_DIR}/Ghidra/Features/Decompiler/os/${PLATFORM}/decompile" \
     || (echo "FATAL: decompiler not found for ${PLATFORM}" && exit 1) && \
     git clone --depth 1 --single-branch "$GHIDRA_MCP_URL" ${GHIDRA_MCP_INSTALL_DIR} && \
+    git clone --depth 1 --single-branch "$AI_GHIDRA_TOOLS_URL" ${GHIDRA_INSTALL_DIR}/ai-ghidra-tools && \
     # bethington/ghidra-mcp uses PEP 723 inline script (no top-level pyproject.toml)
     # Write one so `pip install -e .[sse,dev]` works:
     printf '[build-system]\nrequires = ["setuptools>=68.0", "wheel"]\nbuild-backend = "setuptools.build_meta"\n\n[project]\nname = "ghidra-mcp"\nversion = "5.13.1"\nrequires-python = ">=3.10"\ndependencies = [\n    "mcp>=1.27.2,<2.0.0",\n    "requests>=2.32.0,<3.0.0",\n]\n\n[project.optional-dependencies]\nsse = []\ndev = []\n\n[project.scripts]\nghidra-mcp = "bridge_mcp_ghidra:main"\n\n[tool.setuptools]\npy-modules = ["bridge_mcp_ghidra"]\n' > ${GHIDRA_MCP_INSTALL_DIR}/pyproject.toml && \
@@ -77,6 +79,12 @@ USER claudeuser
 # == Copy pre-start and post-stop hooks to /home/claudeuser/ ==
 COPY hooks/pre-start.d/ /home/claudeuser/pre-start.d/
 COPY hooks/post-stop.d/ /home/claudeuser/post-stop.d/
+
+# == Copy ghidra-mcp SKILLS.md into superpowers (standard location for Claude Code to discover) ==
+COPY SKILLS.md /home/claudeuser/.superpowers/skills/ghidra-mcp/SKILLS.md
+
+# == Copy ai-ghidra-tools SKILL.md into superpowers ==
+COPY ai-ghidra-tools-SKILL.md /home/claudeuser/.superpowers/skills/ai-ghidra-tools/SKILL.md
 
 # == Working directory (user mount point) ==
 WORKDIR /workdir

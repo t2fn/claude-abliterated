@@ -1,0 +1,28 @@
+# == source.shas — Pinned SHA256 checksums for java-claude Docker build ==
+# Source this file in build.sh to get the SHAs.
+# All values are placeholders — Docker build downloads fresh copies and verifies at runtime.
+# Update these values by downloading the binaries and running sha256sum.
+
+# JDK 21 (OpenJDK from base image — no external download needed)
+# JAVA_VER=21.0.5  — already in base image
+
+# Maven 3.9.9 binary
+# MAVEN_SHA256=PLACEHOLDER
+
+# Gradle 8.12 binary
+# GRADLE_SHA256=PLACEHOLDER
+
+# Google Java Format 1.22.0 JAR
+# GOOGLE_JAVA_FMT_SHA256=PLACEHOLDER
+
+# SpotBugs 4.8.6 binary
+# SPOTBUGS_SHA256=PLACEHOLDER
+
+# PMD 7.5.0 binary
+# PMD_SHA256=PLACEHOLDER
+
+# Checkstyle 10.20.1 JAR
+# CHECKSTYLE_SHA256=PLACEHOLDER
+
+# JDT Language Server 1.41.0
+# JDTLS_SHA256=PLACEHOLDER

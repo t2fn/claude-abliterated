@@ -27,24 +27,35 @@ A complete Python development and linting environment on top of claude-abliterat
 
 ---
 
+## Linting Policy
+
+**New files Claude writes** are auto-linted with `ruff check --fix` before being presented to the user. This is always done — no need to ask.
+
+**Existing code** is NOT touched unless Claude is explicitly tasked with linting it. When Claude notices linting issues in existing code, Claude should **ask the user** before running any linting or auto-fix.
+
+```
+When writing NEW files:   auto-lint with ruff check --fix
+When touching EXISTING:   ask first: "Lint the existing code? (yes/no)"
+```
+
 ## Recommended Workflow for Claude-Driven Python Development
 
 ```bash
-# 1. Quick linting (recommended — fast, unified)
+# 1. Lint new files (auto — Claude does this automatically)
 ruff check .              # lint all files
 ruff check --fix .        # auto-fix fixable issues
 ruff format .             # format code (or use black)
 
-# 2. Full lint stack
+# 2. Full lint stack (ask before running on existing code)
 ruff check . && pylint . && mypy . && bandit -r .
 
-# 3. Upgrade syntax
+# 3. Upgrade syntax (ask before modifying existing code)
 pyupgrade --py310 *.py
 
-# 4. Clean unused imports
+# 4. Clean unused imports (ask before modifying existing code)
 autoflake --remove-all-unused-imports --recursive .
 
-# 5. Sort imports
+# 5. Sort imports (ask before modifying existing code)
 isort .                   # or: ruff check --select I . --fix
 ```
 
@@ -118,10 +129,7 @@ time ruff check .        # typically <1s for entire project
 # Consistent style, zero-config opinionated formatting
 ```
 
-**Recommendation**: Run `ruff check .` before every commit. Any flagged issue should be:
-- **Auto-fixed** with `ruff check --fix .` (most issues)
-- **Manually reviewed** for complex rules (B, SIM, RET)
-- **Ignored selectively** in pyproject.toml per-file-ignores
+**Recommendation**: Auto-fix issues in code Claude is actively writing. For existing code not being touched by the current task, report linting issues to the user and offer to run `ruff check --fix` if asked.
 
 ---
 
@@ -434,20 +442,21 @@ bandit -r .             # security
 ```bash
 # 1. During coding: ruff provides real-time diagnostics
 ruff check --watch .
+# New files are auto-linted with ruff check --fix before presenting to user.
 
-# 2. Before committing: run full lint stack
+# 2. Before committing: run full lint stack (ask first for existing code)
 ruff check . && pylint . && mypy . && bandit -r .
 
-# 3. Quick fix all issues
+# 3. Quick fix all issues (ask before modifying existing code)
 ruff check --fix . && autoflake --in-place --remove-all-unused-imports -r .
 
-# 4. Check formatting
+# 4. Check formatting (dry-run first for existing code)
 ruff format --check . && isort --check-only .
 
-# 5. Upgrade syntax
+# 5. Upgrade syntax (ask before modifying existing code)
 pyupgrade --py310 **/*.py
 
-# 6. Security audit
+# 6. Security audit (read-only — safe)
 bandit -r -f json . | jq '.results[] | select(.severity == "HIGH")'
 ```
 

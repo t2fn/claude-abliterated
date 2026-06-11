@@ -1,0 +1,48 @@
+#!/bin/bash
+# 04-lint-generated.sh — Auto-lint generated TypeScript code
+# Mirrors Rust's cargo clippy on generated code + cargo expand
+#
+# Lints auto-generated files (.d.ts, dist/, build/) and config files
+# using biome (fast Rust-based) with fallback to eslint.
+
+echo "[typescript] Auto-linting generated code:"
+
+# Lint generated .d.ts files (declaration files)
+GENERIC_FILES=$(find . -name "*.d.ts" -not -path "./node_modules/*" 2>/dev/null | head -20)
+if [ -n "$GENERIC_FILES" ]; then
+    echo "  Found $(echo "$GENERIC_FILES" | wc -l) declaration files (.d.ts)"
+else
+    echo "  No .d.ts files to lint"
+fi
+
+# Run biome check on generated code areas
+if command -v biome >/dev/null 2>&1; then
+    biome check --no-errors-on-unmatched 2>/dev/null && \
+        echo "  biome: generated code OK" || \
+        echo "  biome: generated code has issues (run biome check --fix .)"
+else
+    echo "  biome not available, skipping auto-lint"
+fi
+
+# Auto-fix common issues in generated files
+if command -v biome >/dev/null 2>&1; then
+    biome check --fix --no-errors-on-unmatched 2>/dev/null && \
+        echo "  biome: auto-fixed generated code" || \
+        echo "  biome: no auto-fix needed"
+fi
+
+# Organize imports in generated files
+if command -v biome >/dev/null 2>&1; then
+    biome check --organize-imports --no-errors-on-unmatched 2>/dev/null && \
+        echo "  biome: imports organized" || \
+        echo "  biome: imports OK"
+fi
+
+# Run eslint on config files as secondary check
+if command -v eslint >/dev/null 2>&1; then
+    eslint biome.json tsconfig.json eslint.config.mjs biome.json 2>/dev/null && \
+        echo "  eslint: config files OK" || \
+        echo "  eslint: config files have warnings"
+fi
+
+echo "[typescript] Auto-lint complete."

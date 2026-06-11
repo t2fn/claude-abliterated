@@ -43,4 +43,4 @@ CLAUDE_MODE="${CLAUDE_MODE:-full}"
 # Wait for /mcp endpoint to be ready (server binds 127.0.0.1, not ::1)
 #sleep 3
 claude mcp add --transport http ghidra http://127.0.0.1:$GHIDRA_MCP_PORT/mcp || true
-echo "[pre-start] Claude configured: MCP_FILE=$MCP_FILE CLAUDE_MODE=$CLAUDE_MODE GHIDRA_MCP_PORT=$GHIDRA_MCP_PORT"
+echo "[pre-start] Claude configured: CLAUDE_MODE=$CLAUDE_MODE GHIDRA_MCP_PORT=$GHIDRA_MCP_PORT"

@@ -42,7 +42,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH="/usr/local/cargo/bin:/usr/local/rustup/bin:/home/claudeuser/.cargo/bin:/home/claudeuser/.local/bin:/home/claudeuser/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
     CARGO_TARGET_DIR=/tmp/cargo-target \
     RUST_BACKTRACE=1 \
-    RUSTFLAGS="-D warnings"
+    RUSTFLAGS="-D warnings -C link-arg=-B/usr/local/rustup/toolchains/${RUST_VER}-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/linkers"
 
 # == Layer 1: root. Install system deps + rustup + core + cargo subcommands + cross-targets ==
 USER root
@@ -91,6 +91,19 @@ RUN set -ex && \
         cargo-make \
     && \
     \
+    # ── 6b. Verify cargo-edit binary was placed in CARGO_HOME/bin (it may not be, see fix below) ──
+    # cargo-edit compiles but the binary can end up in a non-standard location.
+    # If missing, explicitly install it to CARGO_HOME/bin.
+    if [ ! -f /usr/local/cargo/bin/cargo-edit ]; then \
+        echo "cargo-edit binary missing, installing explicitly..."; \
+        export CARGO_HOME=/usr/local/cargo \
+        CARGO_TARGET_DIR=/usr/local/cargo/target && \
+        cargo install --force cargo-edit && \
+        cp /usr/local/cargo/bin/cargo-edit /usr/local/cargo/bin/ 2>/dev/null || true; \
+    else \
+        echo "cargo-edit: OK"; \
+    fi && \
+    \
     # ── 7. Cleanup ──
     rm -rf /usr/local/cargo/registry/src && \
     rm -rf /usr/local/cargo/registry/cache && \
@@ -130,6 +143,9 @@ COPY hooks/post-stop.d/ /home/claudeuser/post-stop.d/
 # == Copy recommended configs ==
 COPY clippy.toml         /home/claudeuser/clippy.toml
 COPY cargo_deny.toml     /home/claudeuser/cargo_deny.toml
+COPY .clippy/            /home/claudeuser/.clippy/
+RUN mkdir -p /home/claudeuser/.superpowers/skills/rust
+COPY SKILL.md            /home/claudeuser/.superpowers/skills/rust/SKILL.md
 
 # == Working directory ==
 WORKDIR /workdir
